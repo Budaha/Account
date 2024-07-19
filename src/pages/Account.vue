@@ -3,7 +3,7 @@
     class="mx-auto w-full max-w-7xl px-6 pt-8 pb-16 md:py-16 sm:px-6 lg:px-8"
   >
     <!-- title and button -->
-    <div class="flex items-center ml-32">
+    <div class="flex items-center">
       <span class="text-2xl font-medium">Учетные записи</span>
       <button
         @click="create"
@@ -12,11 +12,11 @@
         +
       </button>
     </div>
-    <!-- table -->
+
     <div
       v-for="(item, index) in table"
       :key="index"
-      class="flex justify-center mt-5"
+      class="mt-5 grid-container"
     >
       <div class="flex-col">
         <label
@@ -32,7 +32,7 @@
           class="block mt-2 w-full bg-white border border-gray-300 rounded-md py-2 px-3 text-sm placeholder-gray-500 focus:outline-none focus:text-gray-900 focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
         />
       </div>
-      <div class="flex-col ml-5">
+      <div class="flex-col">
         <Listbox as="div" v-model="item.selectedRecordType">
           <ListboxLabel
             v-if="index === 0"
@@ -102,7 +102,10 @@
           </div>
         </Listbox>
       </div>
-      <div class="flex-col ml-5">
+      <div
+        class="flex-col"
+        :class="item.selectedRecordType.id === 1 && 'col-span-2'"
+      >
         <label
           for="login"
           class="block text-sm font-medium leading-6 text-gray-900"
@@ -124,7 +127,7 @@
           >Заполните поле "Логин"</span
         >
       </div>
-      <div v-if="item.selectedRecordType.id !== 1" class="flex-col ml-5">
+      <div v-if="item.selectedRecordType.id !== 1" class="flex-col">
         <label
           v-if="index === 0"
           class="block text-sm font-medium leading-6 text-gray-700"
@@ -177,22 +180,22 @@
       </div>
       <div class="flex items-center">
         <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke-width="1.5"
-        stroke="currentColor"
-        class="size-7 ml-5 cursor-pointer"
-        @click="deleted(item.id)"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m6 4.125 2.25 2.25m0 0 2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"
-        />
-      </svg>
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="size-7 cursor-pointer"
+          @click="deleted(item.id)"
+          :class="index === 0 && 'mt-6'"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m6 4.125 2.25 2.25m0 0 2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"
+          />
+        </svg>
       </div>
-      
     </div>
   </main>
 </template>
@@ -212,7 +215,27 @@ import {
   ChevronLeftIcon,
 } from "@heroicons/vue/20/solid";
 
-const table = ref([
+// Интерфейсы для данных
+interface RecordType {
+  id: number;
+  name: string;
+}
+
+interface TableEntry {
+  id: number;
+  tags: string;
+  selectedRecordType: RecordType;
+  optionsRecordType: RecordType[];
+  login: string;
+  password: string | null;
+  isPassVisible: boolean;
+  isPassType: string;
+  isErrorPas: boolean;
+  isErrorLogin: boolean;
+}
+
+// Инициализация ref с типом
+const table: Ref<TableEntry[]> = ref([
   {
     id: 1,
     tags: "",
@@ -230,24 +253,26 @@ const table = ref([
   },
 ]);
 
-const visiblePass = (id) => {
+// Функция для смены видимости пароля
+const visiblePass = (id: number): void => {
   table.value =
-    table?.value?.map((item) => {
+    table.value?.map((item: TableEntry) => {
       if (item.id === id) {
         return {
           ...item,
-          isPassVisible: !item?.isPassVisible,
-          isPassType: item?.isPassVisible ? "input" : "password",
+          isPassVisible: !item.isPassVisible,
+          isPassType: item.isPassVisible ? "password" : "input",
         };
       }
       return item;
     }) || [];
 };
 
-const removePassword = (id, typeId) => {
+// Функция для удаления пароля
+const removePassword = (id: number, typeId: number): void => {
   if (typeId === 1) {
     table.value =
-      table?.value?.map((item) => {
+      table.value?.map((item: TableEntry) => {
         if (item.id === id) {
           return {
             ...item,
@@ -257,36 +282,47 @@ const removePassword = (id, typeId) => {
         return item;
       }) || [];
   }
-  return;
 };
-const pasValidate = (id) => {
+
+// Функция для проверки пароля
+const pasValidate = (id: number): void => {
   table.value =
-    table?.value?.map((item) => {
+    table.value?.map((item: TableEntry) => {
       if (item.id === id) {
         return {
           ...item,
-          isErrorPas: !item?.password?.length,
-        };
-      }
-      return item;
-    }) || [];
-};
-const logValidate = (id) => {
-  table.value =
-    table?.value?.map((item) => {
-      if (item.id === id) {
-        return {
-          ...item,
-          isErrorLogin: !item?.login?.length,
+          isErrorPas: !item.password?.length,
         };
       }
       return item;
     }) || [];
 };
 
-const create = () => {
-  const newValue = {
-    id: table?.value?.length + 1,
+// Функция для проверки логина
+const logValidate = (id: number): void => {
+  table.value =
+    table.value?.map((item: TableEntry) => {
+      if (item.id === id) {
+        return {
+          ...item,
+          isErrorLogin: !item.login?.length,
+        };
+      }
+      return item;
+    }) || [];
+};
+
+// Функция для создания новой записи
+const create = (): void => {
+  let newId = 0;
+  if (table?.value?.length) {
+    newId =
+      table?.value?.reduce((a: TableEntry, b: TableEntry) =>
+        a?.id > b?.id ? a : b
+      )?.id || 1;
+  }
+  const newValue: TableEntry = {
+    id: newId + 1,
     tags: "",
     selectedRecordType: { id: 2, name: "Локальная" },
     optionsRecordType: [
@@ -297,12 +333,15 @@ const create = () => {
     password: null,
     isPassVisible: false,
     isPassType: "password",
+    isErrorPas: false,
+    isErrorLogin: false,
   };
   table.value.push(newValue);
 };
 
-const deleted = (id) => {
-  table.value = table.value?.filter((item) => item.id !== id);
+// Функция для удаления записи
+const deleted = (id: number): void => {
+  table.value = table.value?.filter((item: TableEntry) => item.id !== id);
 };
 </script>
 
@@ -324,5 +363,10 @@ const deleted = (id) => {
 [dir="rtl"] .pass-visible {
   right: auto;
   left: 0;
+}
+.grid-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 50px;
+  gap: 1rem;
 }
 </style>
