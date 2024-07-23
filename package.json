@@ -9,6 +9,7 @@
   "dependencies": {
     "@headlessui/vue": "^1.7.22",
     "@heroicons/vue": "^2.1.5",
+    "js-cookie": "^3.0.5",
     "pinia": "^2.1.7",
     "vue": "^3.2.13"
   },

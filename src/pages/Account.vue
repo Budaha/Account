@@ -51,6 +51,7 @@
         <input
           v-model="item.tags"
           maxlength="50"
+          @blur="tagsInput(item.id, item.tags)"
           id="tags"
           class="block mt-2 w-full bg-white border border-gray-300 rounded-md py-2 px-3 text-sm placeholder-gray-500 focus:outline-none focus:text-gray-900 focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
         />
@@ -224,7 +225,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import {
   Listbox,
   ListboxButton,
@@ -237,11 +238,16 @@ import {
   ChevronUpDownIcon,
   ChevronLeftIcon,
 } from "@heroicons/vue/20/solid";
+import Cookies from "js-cookie";
 
 // Интерфейсы для данных
 interface RecordType {
   id: number;
   name: string;
+}
+
+interface TagsArrType {
+  text: string;
 }
 
 interface TableEntry {
@@ -255,26 +261,32 @@ interface TableEntry {
   isPassType: string;
   isErrorPas: boolean;
   isErrorLogin: boolean;
+  tagsArr: TagsArrType[];
 }
 
 // Инициализация ref с типом
-const table: Ref<TableEntry[]> = ref([
-  {
-    id: 1,
-    tags: "",
-    selectedRecordType: { id: 2, name: "Локальная" },
-    optionsRecordType: [
-      { id: 1, name: "LDAP" },
-      { id: 2, name: "Локальная" },
-    ],
-    login: "",
-    password: null,
-    isPassVisible: false,
-    isPassType: "password",
-    isErrorPas: false,
-    isErrorLogin: false,
-  },
-]);
+const table: Ref<TableEntry[]> = ref([]);
+
+// Функция для формирования тегов у метки в массив
+const tagsInput = (id: number, resultTest: string) => {
+  table.value =
+    table.value?.map((item: TableEntry) => {
+      if (item.id === id) {
+        return {
+          ...item,
+          tagsArr: convertStringToArray(resultTest),
+        };
+      }
+      return item;
+    }) || [];
+  setCookiesTable();
+};
+
+// Функция преобразует строку в массив по символу ;
+const convertStringToArray = (inputString: string) => {
+  const elements = inputString.split(";").filter(Boolean);
+  return elements.map((text) => ({ text }));
+};
 
 // Функция для смены видимости пароля
 const visiblePass = (id: number): void => {
@@ -291,7 +303,7 @@ const visiblePass = (id: number): void => {
     }) || [];
 };
 
-// Функция для удаления пароля
+// Функция для удаления пароля при изменении типа записи на LDAP
 const removePassword = (id: number, typeId: number): void => {
   if (typeId === 1) {
     table.value =
@@ -305,6 +317,7 @@ const removePassword = (id: number, typeId: number): void => {
         return item;
       }) || [];
   }
+  setCookiesTable();
 };
 
 // Функция для проверки пароля
@@ -319,6 +332,7 @@ const pasValidate = (id: number): void => {
       }
       return item;
     }) || [];
+  setCookiesTable();
 };
 
 // Функция для проверки логина
@@ -333,6 +347,7 @@ const logValidate = (id: number): void => {
       }
       return item;
     }) || [];
+  setCookiesTable();
 };
 
 // Функция для создания новой записи
@@ -358,6 +373,7 @@ const create = (): void => {
     isPassType: "password",
     isErrorPas: false,
     isErrorLogin: false,
+    tagsArr: [],
   };
   table.value.push(newValue);
 };
@@ -365,7 +381,32 @@ const create = (): void => {
 // Функция для удаления записи
 const deleted = (id: number): void => {
   table.value = table.value?.filter((item: TableEntry) => item.id !== id);
+  setCookiesTable();
 };
+
+// Функция для сохранения в cookie
+const setCookiesTable = () => {
+  const result =
+    table.value
+      ?.map((item: TableEntry) => {
+        if (!item.isErrorPas && !item.isErrorLogin) {
+          return item;
+        }
+      })
+      ?.filter((item: TableEntry) => item) || [];
+  Cookies.set("value", JSON.stringify(result));
+};
+
+// Хук срабатывающий при загрузке страницы, вызывающий массив сохраненных записей
+onMounted(() => {
+  const cookies = Cookies.get("value");
+  if (cookies) {
+    const result = JSON.parse(Cookies.get("value")) || [];
+    // console.log(result);
+
+    table.value = result || [];
+  }
+});
 </script>
 
 <style scoped>
